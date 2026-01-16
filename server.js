@@ -32,14 +32,17 @@ app.post('/test', (req, res) => {
 
   // Play sound if status is firing
   if (req.body && req.body.status === 'firing') {
-    const soundName = process.env.ALERT_SOUND || 'Glass';
-    const volume = process.env.ALERT_VOLUME || '1';
-    const soundPath = `/System/Library/Sounds/${soundName}.aiff`;
+    // Check if running on macOS
+    if (process.platform === 'darwin') {
+      const soundName = process.env.ALERT_SOUND || 'Glass';
+      const volume = process.env.ALERT_VOLUME || '1';
+      const soundPath = `/System/Library/Sounds/${soundName}.aiff`;
 
-    // macOS system sound with volume control
-    exec(`afplay -v ${volume} "${soundPath}"`, (err) => {
-      if (err) console.error('無法播放音效:', err);
-    });
+      // macOS system sound with volume control
+      exec(`afplay -v ${volume} "${soundPath}"`, (err) => {
+        if (err) console.error('無法播放音效:', err);
+      });
+    }
   }
 
   const endTimestamp = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
