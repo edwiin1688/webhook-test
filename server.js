@@ -3,22 +3,16 @@ const express = require('express');
 const { exec } = require('child_process');
 const crypto = require('crypto');
 const app = express();
-const PORT = process.env.PORT || 9999;
-const RATE_LIMIT = parseInt(process.env.RATE_LIMIT || '60');
-const BODY_LIMIT = process.env.BODY_LIMIT || '1mb';
-const ALLOWED_IPS = process.env.ALLOWED_IPS ? process.env.ALLOWED_IPS.split(',') : [];
-
-// ANSI Color Codes
-const COLORS = {
-  RESET: '\x1b[0m',
-  CYAN: '\x1b[36m',
-  GREEN: '\x1b[32m',
-  YELLOW: '\x1b[33m',
-  RED: '\x1b[31m',
-  MAGENTA: '\x1b[35m',
-  DIM: '\x1b[2m',
-  BLUE: '\x1b[34m'
-};
+const {
+  PORT,
+  RATE_LIMIT,
+  BODY_LIMIT,
+  ALLOWED_IPS,
+  API_TOKEN,
+  ALERT_SOUND,
+  ALERT_VOLUME,
+  COLORS,
+} = require('./config');
 
 // CORS middleware
 app.use((req, res, next) => {
@@ -92,7 +86,7 @@ app.use((req, res, next) => {
 // API Token validation (skip for /health)
 const validateToken = (req, res, next) => {
   const token = req.headers['x-api-token'];
-  const expectedToken = process.env.API_TOKEN;
+  const expectedToken = API_TOKEN;
 
   if (expectedToken && token !== expectedToken) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -151,8 +145,8 @@ app.post('/test', ipWhitelist, rateLimit, validateToken, validatePayload, (req, 
 
   if (req.body && req.body.status === 'firing') {
     if (process.platform === 'darwin') {
-      const soundName = process.env.ALERT_SOUND || 'Glass';
-      const volume = process.env.ALERT_VOLUME || '1';
+      const soundName = ALERT_SOUND;
+      const volume = ALERT_VOLUME;
       const soundPath = `/System/Library/Sounds/${soundName}.aiff`;
 
       exec(`afplay -v ${volume} "${soundPath}"`, (err) => {
