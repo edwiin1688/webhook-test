@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const { exec } = require('child_process');
-const path = require('path');
+const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 9999;
 
@@ -13,15 +13,23 @@ const COLORS = {
   YELLOW: "\x1b[33m",
   RED: "\x1b[31m",
   MAGENTA: "\x1b[35m",
-  DIM: "\x1b[2m"
+  DIM: "\x1b[2m",
+  BLUE: "\x1b[34m"
 };
 
 app.use(express.json());
 
+// Request ID middleware
+app.use((req, res, next) => {
+  req.id = crypto.randomUUID().slice(0, 8);
+  res.setHeader('X-Request-ID', req.id);
+  next();
+});
+
 // Log middleware with timestamp
 app.use((req, res, next) => {
   const timestamp = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
-  console.log(`${COLORS.DIM}[${timestamp}]${COLORS.RESET} ${COLORS.GREEN}${req.method}${COLORS.RESET} ${COLORS.CYAN}${req.url}${COLORS.RESET}`);
+  console.log(`${COLORS.DIM}[${timestamp}]${COLORS.RESET} ${COLORS.BLUE}[${req.id}]${COLORS.RESET} ${COLORS.GREEN}${req.method}${COLORS.RESET} ${COLORS.CYAN}${req.url}${COLORS.RESET}`);
   next();
 });
 
