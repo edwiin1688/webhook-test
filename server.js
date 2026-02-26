@@ -5,6 +5,8 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 9999;
 const RATE_LIMIT = parseInt(process.env.RATE_LIMIT || '60');
+const BODY_LIMIT = process.env.BODY_LIMIT || '1mb';
+const ALLOWED_IPS = process.env.ALLOWED_IPS ? process.env.ALLOWED_IPS.split(',') : [];
 
 // ANSI Color Codes
 const COLORS = {
@@ -18,7 +20,30 @@ const COLORS = {
   BLUE: "\x1b[34m"
 };
 
-app.use(express.json());
+// CORS middleware
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Token');
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send();
+  }
+  next();
+});
+
+// IP Whitelist
+const ipWhitelist = (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const clientIp = ip.replace(/^::ffff:/, '');
+  
+  if (ALLOWED_IPS.length > 0 && !ALLOWED_IPS.some(allowed => clientIp === allowed.trim() || allowed.trim() === '*')) {
+    console.log(`${COLORS.RED}🚫 IP 被阻擋${COLORS.RESET} | IP: ${clientIp} | 不在白名單中`);
+    return res.status(403).json({ error: 'Forbidden: IP not allowed' });
+  }
+  next();
+};
+
+app.use(express.json({ limit: BODY_LIMIT }));
 
 // Statistics
 const stats = {
@@ -106,7 +131,7 @@ app.get('/stats', (req, res) => {
   });
 });
 
-app.post('/test', rateLimit, validateToken, validatePayload, (req, res) => {
+app.post('/test', ipWhitelist, rateLimit, validateToken, validatePayload, (req, res) => {
   stats.totalRequests++;
   console.log(`${COLORS.YELLOW}🚀 收到 Grafana 通知:${COLORS.RESET}`);
   console.dir(req.body, { depth: null, colors: true });

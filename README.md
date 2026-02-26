@@ -55,6 +55,12 @@ API_TOKEN=your-secret-token
 # Rate Limit (每分鐘最多請求次數，預設: 60)
 # RATE_LIMIT=60
 
+# Request Body 大小限制 (預設: 1mb)
+# BODY_LIMIT=1mb
+
+# IP 白名單 (逗號分隔，留空允許所有，* 代表任意)
+# ALLOWED_IPS=127.0.0.1,::1
+
 # 警報音效設定 (僅 macOS 有效)
 # 預設: Glass
 ALERT_SOUND=Glass
