@@ -7,6 +7,8 @@ const ALLOWED_IPS = process.env.ALLOWED_IPS ? process.env.ALLOWED_IPS.split(',')
 const API_TOKEN = process.env.API_TOKEN || null;
 const ALERT_SOUND = process.env.ALERT_SOUND || 'Glass';
 const ALERT_VOLUME = process.env.ALERT_VOLUME || '1';
+const FILTER_LABELS = process.env.FILTER_LABELS ? process.env.FILTER_LABELS.split(',') : [];
+const FILTER_MODE = process.env.FILTER_MODE || 'allow'; // 'allow' or 'block'
 
 const COLORS = {
   RESET: '\x1b[0m',
@@ -27,5 +29,7 @@ module.exports = {
   API_TOKEN,
   ALERT_SOUND,
   ALERT_VOLUME,
+  FILTER_LABELS,
+  FILTER_MODE,
   COLORS,
 };

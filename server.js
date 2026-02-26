@@ -12,6 +12,8 @@ const {
   API_TOKEN,
   ALERT_SOUND,
   ALERT_VOLUME,
+  FILTER_LABELS,
+  FILTER_MODE,
   COLORS,
 } = require('./config');
 
@@ -145,12 +147,37 @@ app.get('/history', (req, res) => {
   res.status(200).json({ history });
 });
 
+// Alert filter based on labels
+const filterAlerts = (alerts) => {
+  if (FILTER_LABELS.length === 0) {
+    return alerts;
+  }
+
+  return alerts.filter((alert) => {
+    const labels = alert.labels || {};
+    const hasMatch = FILTER_LABELS.some((label) => labels[label]);
+
+    if (FILTER_MODE === 'block') {
+      return !hasMatch;
+    }
+    return hasMatch;
+  });
+};
+
 app.post('/test', ipWhitelist, rateLimit, validateToken, validatePayload, (req, res) => {
   stats.totalRequests++;
-  console.log(`${COLORS.YELLOW}🚀 收到 Grafana 通知:${COLORS.RESET}`);
+  console.log(`${COLORS.YELLOW}收到 Grafana 通知:${COLORS.RESET}`);
+
+  const alerts = req.body.alerts || [];
+  const filteredAlerts = filterAlerts(alerts);
+
+  if (filteredAlerts.length !== alerts.length) {
+    console.log(`${COLORS.CYAN}過濾後 Alert 數量: ${filteredAlerts.length} / ${alerts.length}${COLORS.RESET}`);
+  }
+
   console.dir(req.body, { depth: null, colors: true });
 
-  if (req.body && req.body.status === 'firing') {
+  if (req.body && req.body.status === 'firing' && filteredAlerts.length > 0) {
     if (process.platform === 'darwin') {
       const soundName = ALERT_SOUND;
       const volume = ALERT_VOLUME;
