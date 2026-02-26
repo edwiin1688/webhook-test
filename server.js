@@ -68,6 +68,26 @@ const validateToken = (req, res, next) => {
   next();
 };
 
+// Payload validation for Grafana webhook
+const validatePayload = (req, res, next) => {
+  const body = req.body;
+  
+  if (!body || typeof body !== 'object') {
+    console.log(`${COLORS.RED}⚠️  無效 Payload${COLORS.RESET} | 原因: 請求體為空或格式錯誤`);
+    return res.status(400).json({ error: 'Invalid payload: empty or malformed JSON' });
+  }
+  
+  const { status, alerts } = body;
+  
+  if (!status || !['firing', 'resolved'].includes(status)) {
+    console.log(`${COLORS.RED}⚠️  無效 Payload${COLORS.RESET} | 原因: 缺少 status 欄位或值不正確 (firing/resolved)`);
+    return res.status(400).json({ error: 'Invalid payload: missing or invalid status field' });
+  }
+  
+  console.log(`${COLORS.GREEN}✅ Payload 驗證通過${COLORS.RESET} | status: ${status} | alerts: ${alerts?.length || 0} 個`);
+  next();
+};
+
 // Log middleware with timestamp
 app.use((req, res, next) => {
   const timestamp = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false });
@@ -86,7 +106,7 @@ app.get('/stats', (req, res) => {
   });
 });
 
-app.post('/test', rateLimit, validateToken, (req, res) => {
+app.post('/test', rateLimit, validateToken, validatePayload, (req, res) => {
   stats.totalRequests++;
   console.log(`${COLORS.YELLOW}🚀 收到 Grafana 通知:${COLORS.RESET}`);
   console.dir(req.body, { depth: null, colors: true });
